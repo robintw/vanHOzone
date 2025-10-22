@@ -52,36 +52,45 @@ def get_ozone_conc(lat, lon, timestamp):
         lon_count = 1
 
     if lat_count != lon_count:
-        raise ValueError("lan and lon arrays must be the same length")
+        raise ValueError("lat and lon arrays must be the same length")
 
     lat = np.array(lat)
     lon = np.array(lon)
 
     # Set the Day of Year
-    try:
-        # Try and do list-based things with it
-        # If it works then it is a list, so check length is correct
-        # and process
-        count = len(timestamp)
-        if count == len(lat):
-            try:
-                E = [t.timetuple().tm_yday for t in timestamp]
-                E = np.array(E)
-            except:
-                d = [parse(t) for t in timestamp]
-                E = [dt.timetuple().tm_yday for dt in d]
-                E = np.array(E)
-        else:
-            raise ValueError("Timestamp must be the same length as lat and lon")
-    except:
-        # It isn't a list, so just do it once
+    # Check if timestamp is a string first (strings have len() but aren't arrays)
+    if isinstance(timestamp, str):
+        # Single string timestamp - parse it
+        d = parse(timestamp)
+        E = d.timetuple().tm_yday
+    else:
         try:
-            # If this works then it is a datetime obj
-            E = timestamp.timetuple().tm_yday
+            # Try and do list-based things with it
+            # If it works then it is a list, so check length is correct
+            # and process
+            count = len(timestamp)
+            if count == len(lat):
+                try:
+                    E = [t.timetuple().tm_yday for t in timestamp]
+                    E = np.array(E)
+                except:
+                    d = [parse(t) for t in timestamp]
+                    E = [dt.timetuple().tm_yday for dt in d]
+                    E = np.array(E)
+            else:
+                raise ValueError("Timestamp must be the same length as lat and lon")
+        except ValueError:
+            # Re-raise ValueError for length mismatch
+            raise
         except:
-            # If not then a string, so parse it and set it
-            d = parse(timestamp)
-            E = d.timetuple().tm_yday
+            # It isn't a list, so just do it once
+            try:
+                # If this works then it is a datetime obj
+                E = timestamp.timetuple().tm_yday
+            except:
+                # If not then a string, so parse it and set it
+                d = parse(timestamp)
+                E = d.timetuple().tm_yday
 
     # Set parameters which are the same for both
     # hemispheres
